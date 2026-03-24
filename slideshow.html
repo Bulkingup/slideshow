@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Joaquin Latina — Fotografía Arquitectónica</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Jost:wght@200;300&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: #0a0a0a;
+      overflow: hidden;
+      cursor: none;
+    }
+
+    /* ── SLIDES ─────────────────────────────────────────── */
+    #stage {
+      position: fixed;
+      inset: 0;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center center;
+      background-repeat: no-repeat;
+      opacity: 0;
+      transition: opacity 1.4s cubic-bezier(0.4, 0, 0.2, 1);
+      will-change: opacity;
+    }
+
+    .slide.active  { opacity: 1; }
+    .slide.leaving { opacity: 0; }
+
+    /* subtle dark vignette so UI stays readable */
+    .slide::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.45) 100%),
+        linear-gradient(to bottom, rgba(0,0,0,0.18) 0%, transparent 30%, transparent 70%, rgba(0,0,0,0.35) 100%);
+      pointer-events: none;
+    }
+
+    /* ── LOGO / NAME ────────────────────────────────────── */
+    #brand {
+      position: fixed;
+      top: 38px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      z-index: 10;
+      pointer-events: none;
+      opacity: 0;
+      animation: fadeIn 1.8s ease 0.6s forwards;
+    }
+
+    #brand h1 {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 300;
+      font-size: clamp(1.1rem, 2.5vw, 1.55rem);
+      letter-spacing: 0.32em;
+      color: #fff;
+      text-transform: uppercase;
+      text-shadow: 0 1px 18px rgba(0,0,0,0.6);
+      white-space: nowrap;
+    }
+
+    #brand p {
+      font-family: 'Jost', sans-serif;
+      font-weight: 200;
+      font-size: clamp(0.55rem, 1.1vw, 0.7rem);
+      letter-spacing: 0.48em;
+      color: rgba(255,255,255,0.65);
+      text-transform: uppercase;
+      margin-top: 5px;
+      text-shadow: 0 1px 10px rgba(0,0,0,0.5);
+    }
+
+    /* ── NAVIGATION ARROWS ──────────────────────────────── */
+    .nav-arrow {
+      position: fixed;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 10;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 20px 28px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    #nav-prev { left: 0; }
+    #nav-next { right: 0; }
+
+    body:hover .nav-arrow { opacity: 1; }
+
+    .nav-arrow svg {
+      width: 20px;
+      height: 40px;
+      stroke: rgba(255,255,255,0.7);
+      fill: none;
+      stroke-width: 1.5;
+      transition: stroke 0.2s;
+    }
+
+    .nav-arrow:hover svg { stroke: #fff; }
+
+    /* ── COUNTER ────────────────────────────────────────── */
+    #counter {
+      position: fixed;
+      bottom: 32px;
+      right: 40px;
+      font-family: 'Jost', sans-serif;
+      font-weight: 200;
+      font-size: 0.65rem;
+      letter-spacing: 0.25em;
+      color: rgba(255,255,255,0.45);
+      z-index: 10;
+      pointer-events: none;
+      opacity: 0;
+      animation: fadeIn 1.8s ease 1.2s forwards;
+    }
+
+    /* ── PROGRESS BAR ───────────────────────────────────── */
+    #progress {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      height: 2px;
+      background: rgba(255,255,255,0.55);
+      z-index: 10;
+      width: 0%;
+      transition: width linear;
+    }
+
+    /* ── CUSTOM CURSOR ──────────────────────────────────── */
+    #cursor {
+      position: fixed;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.9);
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      transition: transform 0.12s ease, width 0.2s ease, height 0.2s ease, background 0.2s ease;
+      mix-blend-mode: difference;
+    }
+
+    #cursor.over-nav {
+      width: 40px; height: 40px;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.6);
+    }
+
+    /* ── ANIMATIONS ─────────────────────────────────────── */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── TOUCH HINT ─────────────────────────────────────── */
+    #touch-hint {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Jost', sans-serif;
+      font-weight: 200;
+      font-size: 0.6rem;
+      letter-spacing: 0.35em;
+      color: rgba(255,255,255,0.3);
+      text-transform: uppercase;
+      z-index: 10;
+      pointer-events: none;
+      display: none;
+      opacity: 0;
+      animation: fadeIn 2s ease 2s forwards;
+    }
+
+    @media (hover: none) {
+      #touch-hint { display: block; }
+      #cursor { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="stage"></div>
+
+  <div id="brand">
+    <h1>Joaquin Latina</h1>
+    <p>Fotografía Arquitectónica</p>
+  </div>
+
+  <button class="nav-arrow" id="nav-prev" aria-label="Imagen anterior">
+    <svg viewBox="0 0 20 40"><polyline points="15,5 5,20 15,35"/></svg>
+  </button>
+
+  <button class="nav-arrow" id="nav-next" aria-label="Imagen siguiente">
+    <svg viewBox="0 0 20 40"><polyline points="5,5 15,20 5,35"/></svg>
+  </button>
+
+  <div id="counter"></div>
+  <div id="progress"></div>
+  <div id="touch-hint">deslizá para navegar</div>
+  <div id="cursor"></div>
+
+  <script>
+    // ─────────────────────────────────────────────────────
+    //  ★ ADD YOUR IMAGES HERE
+    //  To get more image URLs:
+    //  1. Open any photo on your Adobe Portfolio site
+    //  2. Right-click the image → "Open image in new tab"
+    //  3. Copy the URL and paste it below
+    //  4. You can add as many as you like, one per line
+    // ─────────────────────────────────────────────────────
+    const IMAGES = [
+      // -- Currently loaded from your homepage cover images --
+      // (open each in full resolution and replace if needed)
+
+      // Arquitectura cover
+      "https://cdn.myportfolio.com/6075eba2-ad3f-457c-86c7-9214e65da58e/9fe9b69f-6b14-4306-ad2b-e9ee8ff2fbc0_rw_1920.jpg",
+      // Comercial cover
+      "https://cdn.myportfolio.com/6075eba2-ad3f-457c-86c7-9214e65da58e/860626f6-0e3f-4e24-8abf-9132998967e9_rw_1920.jpg",
+      // Interiores cover
+      "https://cdn.myportfolio.com/6075eba2-ad3f-457c-86c7-9214e65da58e/cab64ee8-cac1-4472-adad-b160938832aa_rw_1920.jpg",
+      // Before & After cover
+      "https://cdn.myportfolio.com/6075eba2-ad3f-457c-86c7-9214e65da58e/39bed155-9927-48dc-a375-4781e3f50a5b_rw_1920.jpg",
+      // Proyectos Personales cover
+      "https://cdn.myportfolio.com/6075eba2-ad3f-457c-86c7-9214e65da58e/79c81704-477f-4496-99ed-6e07d786fcd2_rw_1920.jpg",
+
+      // -- PASTE YOUR ADDITIONAL IMAGES BELOW THIS LINE --
+
+
+    ];
+
+    // ─────────────────────────────────────────────────────
+    //  CONFIG
+    // ─────────────────────────────────────────────────────
+    const INTERVAL  = 6000;  // ms between transitions
+    const RANDOM_START = true; // start on a random image
+
+    // ─────────────────────────────────────────────────────
+    //  STATE
+    // ─────────────────────────────────────────────────────
+    const stage    = document.getElementById('stage');
+    const counter  = document.getElementById('counter');
+    const progress = document.getElementById('progress');
+    const cursor   = document.getElementById('cursor');
+    const navPrev  = document.getElementById('nav-prev');
+    const navNext  = document.getElementById('nav-next');
+
+    let slides     = [];
+    let current    = 0;
+    let timer      = null;
+    let progTimer  = null;
+    let paused     = false;
+
+    // shuffle helper
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    // build shuffled list
+    const order = shuffle([...Array(IMAGES.length).keys()]);
+    if (!RANDOM_START) order.unshift(order.splice(order.indexOf(0), 1)[0]);
+
+    // pre-create slide divs
+    IMAGES.forEach((src, i) => {
+      const div = document.createElement('div');
+      div.className = 'slide';
+      div.style.backgroundImage = `url(${src})`;
+      stage.appendChild(div);
+      slides.push(div);
+    });
+
+    function updateCounter() {
+      counter.textContent = `${(current + 1).toString().padStart(2, '0')} / ${IMAGES.length.toString().padStart(2, '0')}`;
+    }
+
+    function startProgress() {
+      clearInterval(progTimer);
+      progress.style.transition = 'none';
+      progress.style.width = '0%';
+      // force reflow
+      progress.offsetWidth;
+      progress.style.transition = `width ${INTERVAL}ms linear`;
+      progress.style.width = '100%';
+    }
+
+    function goTo(idx, noRestart) {
+      slides[order[current]].classList.remove('active');
+      current = ((idx % IMAGES.length) + IMAGES.length) % IMAGES.length;
+      slides[order[current]].classList.add('active');
+      updateCounter();
+      if (!noRestart) {
+        clearTimeout(timer);
+        timer = setTimeout(goNext, INTERVAL);
+        startProgress();
+      }
+    }
+
+    function goNext() { goTo(current + 1); }
+    function goPrev() { goTo(current - 1); }
+
+    // start
+    slides[order[0]].classList.add('active');
+    current = 0;
+    updateCounter();
+    timer = setTimeout(goNext, INTERVAL);
+    startProgress();
+
+    // preload first few
+    [1, 2, 3].forEach(i => {
+      if (i < IMAGES.length) {
+        const img = new Image();
+        img.src = IMAGES[order[i]];
+      }
+    });
+
+    // buttons
+    navNext.addEventListener('click', goNext);
+    navPrev.addEventListener('click', goPrev);
+
+    // keyboard
+    document.addEventListener('keydown', e => {
+      if (e.key === 'ArrowRight') goNext();
+      if (e.key === 'ArrowLeft')  goPrev();
+    });
+
+    // touch swipe
+    let touchStartX = 0;
+    document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; });
+    document.addEventListener('touchend', e => {
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      if (Math.abs(dx) > 50) dx < 0 ? goNext() : goPrev();
+    });
+
+    // custom cursor
+    document.addEventListener('mousemove', e => {
+      cursor.style.left = e.clientX + 'px';
+      cursor.style.top  = e.clientY + 'px';
+    });
+
+    [navPrev, navNext].forEach(btn => {
+      btn.addEventListener('mouseenter', () => cursor.classList.add('over-nav'));
+      btn.addEventListener('mouseleave', () => cursor.classList.remove('over-nav'));
+    });
+  </script>
+</body>
+</html>
